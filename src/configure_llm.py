@@ -14,7 +14,11 @@ class Config:
 
     # Google Gemini's OpenAI-compatible API base endpoint
     llm_base_url: str = "https://generativelanguage.googleapis.com/v1beta/openai"
-    llm_model_name: str = "gemini-2.5-flash"
+
+    # model list: https://ai.google.dev/gemini-api/docs/models
+    #llm_model_name: str = "gemini-2.5-flash"
+    llm_model_name: str = "gemini-3.1-flash-lite"
+    #llm_model_name: str = "gemini-3-flash-preview"
 
     # Attempts to read from environment variable first, otherwise falls back to the string
     llm_api_key: str = os.environ.get("GEMINI_API_KEY", "YOUR_GOOGLE_GEMINI_API_KEY")
@@ -111,31 +115,60 @@ class Config:
         # Use dict.fromkeys to safely remove duplicates (like 'wget') while preserving list order
         return list(dict.fromkeys(commands))
 
-    @property
-    def system_prompt(self) -> str:
-        """Generate the system prompt for the LLM based on allowed commands."""
+    def generate_system_prompt(self, active_stage_instructions: str) -> str:
+        """Generate the system prompt based on allowed commands and the active stage."""
         return f"""/think
 
-You are a helpful and very concise Bash assistant with the ability to execute commands in the shell.
-You engage with users to help answer questions about bash commands, or execute their intent.
-If user intent is unclear, keep engaging with them to figure out what they need and how to best help
-them. If they ask questions that are not relevant to bash or computer use, decline to answer.
+You are a helpful and very concise Bash assistant executing commands in the shell.
+You are helping the user execute a highly structured, gated workflow.
 
 When a command is executed, you will be given the output from that command and any errors. Based on
 that, either take further actions or yield control to the user.
 
 The bash interpreter's output and current working directory will be given to you every time a
-command is executed. Take that into account for the next conversation.
+command is executed. Take that into account for the actions you are taking.
 If there was an error during execution, tell the user what that error was exactly.
 
-You are only allowed to execute the following commands. Break complex tasks into shorter commands from this list:
+---
+{active_stage_instructions}
+---
 
+Your role in this step is strictly bounded by the current active stage. 
+Do not jump ahead to future stages or attempt to write code for future steps 
+unless the current stage explicitly dictates it.
+
+You are only allowed to execute the following commands:
 ```
 {self.allowed_commands}
 ```
-
-**Never** attempt to execute a command not in this list. If the user asks you to do so, politely refuse.
+Never attempt to execute a command not in this list. If asked to do so, politely refuse.
 """
+
+#     @property
+#     def system_prompt(self) -> str:
+#         """Generate the system prompt for the LLM based on allowed commands."""
+#         return f"""/think
+
+# You are a helpful and very concise Bash assistant with the ability to execute commands in the shell.
+# You engage with users to help answer questions about bash commands, or execute their intent.
+# If user intent is unclear, keep engaging with them to figure out what they need and how to best help
+# them. 
+
+# When a command is executed, you will be given the output from that command and any errors. Based on
+# that, either take further actions or yield control to the user.
+
+# The bash interpreter's output and current working directory will be given to you every time a
+# command is executed. Take that into account for the next conversation.
+# If there was an error during execution, tell the user what that error was exactly.
+
+# You are only allowed to execute the following commands. Break complex tasks into shorter commands from this list:
+
+# ```
+# {self.allowed_commands}
+# ```
+
+# **Never** attempt to execute a command not in this list. If asked to do so, politely refuse.
+# """
 
 
 # EOF
