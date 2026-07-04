@@ -6,6 +6,7 @@ import argparse
 from configure_llm import Config
 from run_bash import Bash
 from helpers import Messages, LLM
+from workflow import WorkflowManager  # Import the manager
 
 
 def confirm_execution(cmd: str) -> bool:
@@ -13,22 +14,70 @@ def confirm_execution(cmd: str) -> bool:
     return input(f"   Execute '{cmd}'? [y/N]: ").strip().lower() == "y"
 
 
-def main(config: Config, proceed_without_waiting:bool):
+def main(config: Config, proceed_without_waiting: bool):
     bash = Bash(config)
     # The model
     llm = LLM(config)
+
+    # Initialize Workflow Manager
+    wf = WorkflowManager()
+
+    # Setup Messages with the initial dynamic system prompt
+    system_prompt = config.generate_system_prompt(wf.get_current_instructions())
+
     # The conversation history, with the system prompt
-    messages = Messages(config.system_prompt)
-    print("[INFO] Type 'quit' at any time to exit the agent loop.\n")
+    messages = Messages(system_prompt)
+
+    print("[INFO] Type 'quit' at any time to exit the agent loop.")
+    print("[INFO] Type 'bash:' and a command to run the command without using the LLM.")
+    print("[INFO] Type '/signoff' to approve the current stage and advance.")
+    print("[INFO] Type '/back' to revert to the previous stage.\n")
 
     # The main agent loop
     while True:
+
+        stage_prefix = wf.get_stage_prefix()
+
         # Get user message.
-        user = input(f"['{bash.cwd}' 🙂] ").strip()
+        user = input(f"{stage_prefix} ['{bash.cwd}' 🙂] ").strip()
 
         if user.lower() == "quit":
             print("\n[🤖] Shutting down. Bye!\n")
             break
+
+        # Intercept Manual Workflow Controls
+        if user.lower() == "/signoff":
+            old_stage = wf.get_stage_prefix()
+            if wf.advance_stage():
+                print(
+                    f"\nSigned off! Transitioning from {old_stage} to {wf.get_stage_prefix()}\n"
+                )
+                # Refresh system prompt and start a new message list or append system update
+                new_system = config.generate_system_prompt(
+                    wf.get_current_instructions()
+                )
+                messages.set_system_message(new_system)
+
+                print(f"Reminder: {wf.get_current_instructions()}")
+                continue
+            else:
+                print("\n[✔️] All stages completed! Final validation achieved.\n")
+                continue
+
+        if user.lower() == "/back":
+            old_stage = wf.get_stage_prefix()
+            if wf.regress_stage():
+                print(
+                    f"\n[⚠️] Transitioning back: {old_stage} ➡️ {wf.get_stage_prefix()}\n"
+                )
+                new_system = config.generate_system_prompt(
+                    wf.get_current_instructions()
+                )
+                messages.set_system_message(new_system)
+                continue
+            else:
+                print("\n[⚠️] Already at Stage 1.\n")
+                continue
 
         if user.lower().lstrip().startswith("bash:"):
             command = user.removeprefix("bash:")
@@ -40,9 +89,12 @@ def main(config: Config, proceed_without_waiting:bool):
             not user
         ):  # an empty string evaluates to False in a boolean context. Therefore, `not user` becomes True when the string is empty.
             continue  # skips the rest of the code and immediately starts the next loop
-        # Always tell the agent where the current working directory is to avoid confusions.
-        user += f"\n Current working directory: `{bash.cwd}`"
-        messages.add_user_message(user)
+        # Append current working directory to Always tell the agent where the current working directory is to avoid confusions.
+        # Enforce active stage context
+        user_message = (
+            f"[{stage_prefix}] {user}\nCurrent working directory: `{bash.cwd}`"
+        )
+        messages.add_user_message(user_message)
 
         # The tool-call/response loop
         while True:
@@ -118,11 +170,13 @@ if __name__ == "__main__":
     theparser.add_argument("--dir", type=str, help="starting directory")
 
     # True if flag is present, False if absent
-    theparser.add_argument("--proceed", action="store_true", help="don't prompt the user for each command")
+    theparser.add_argument(
+        "--proceed", action="store_true", help="don't prompt the user for each command"
+    )
 
     args = theparser.parse_args()
 
-    proceed_without_waiting=args.proceed
+    proceed_without_waiting = args.proceed
 
     # Pass the command line flag directly into the Config initialization
     config = Config(
