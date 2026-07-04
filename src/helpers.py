@@ -33,8 +33,9 @@ class Messages:
         payload = {"role": "assistant", "content": message or ""}
         if tool_calls:
             # Reconstruct the tool_calls list to match OpenAI specification
-            payload["tool_calls"] = [
-                {
+            payload["tool_calls"] = []
+            for tc in tool_calls:
+                tc_data = {
                     "id": tc.id,
                     "type": "function",
                     "function": {
@@ -42,8 +43,10 @@ class Messages:
                         "arguments": tc.function.arguments,
                     },
                 }
-                for tc in tool_calls
-            ]
+                # Preserve extra_content (containing thought_signature) for Gemini compatibility
+                if getattr(tc, "extra_content", None) is not None:
+                    tc_data["extra_content"] = tc.extra_content
+                payload["tool_calls"].append(tc_data)
         self.messages.append(payload)
 
     def add_tool_message(self, message, id, name):
@@ -73,10 +76,11 @@ class ToolCallFunction:
 
 
 class ToolCall:
-    def __init__(self, id: str, function: ToolCallFunction, type: str = "function"):
+    def __init__(self, id: str, function: ToolCallFunction, type: str = "function", extra_content: Any = None):
         self.id = id
         self.function = function
         self.type = type
+        self.extra_content = extra_content
 
 
 class LLM:
@@ -209,14 +213,17 @@ class LLM:
             )
 
             tc_id = tc_dict.get("id") or f"call_{uuid.uuid4().hex[:12]}"
+            extra_content = tc_dict.get("extra_content")  # Extract signature metadata
 
             tool_calls.append(
                 ToolCall(
-                    id=tc_id, function=func_obj, type=tc_dict.get("type", "function")
+                    id=tc_id,
+                    function=func_obj,
+                    type=tc_dict.get("type", "function"),
+                    extra_content=extra_content,  # Pass signature metadata
                 )
             )
 
         return content, tool_calls
-
 
 # EOF
