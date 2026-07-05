@@ -76,7 +76,13 @@ class ToolCallFunction:
 
 
 class ToolCall:
-    def __init__(self, id: str, function: ToolCallFunction, type: str = "function", extra_content: Any = None):
+    def __init__(
+        self,
+        id: str,
+        function: ToolCallFunction,
+        type: str = "function",
+        extra_content: Any = None,
+    ):
         self.id = id
         self.function = function
         self.type = type
@@ -225,5 +231,6 @@ class LLM:
             )
 
         return content, tool_calls
+
 
 # EOF

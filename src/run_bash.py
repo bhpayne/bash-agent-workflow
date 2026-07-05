@@ -31,7 +31,6 @@ class Bash:
                     extracted.append(cleaned.split()[0])
         return extracted
 
-
     def exec_bash_command(self, cmd: str) -> Dict[str, str]:
         """
         Execute the bash command after getting confirmation from the user.
@@ -58,23 +57,33 @@ class Bash:
                     break
 
             if not allowed:
-                return {"error": f"Parts of this command were not in the allowlist: '{line}'"}
+                return {
+                    "error": f"Parts of this command were not in the allowlist: '{line}'"
+                }
 
             # Run the single line command
             res = self._run_bash_command(line)
-            
+
             # Accumulate stdout and stderr
-            if res.get("stdout") and res["stdout"] != "Command executed successfully, without any output.":
+            if (
+                res.get("stdout")
+                and res["stdout"]
+                != "Command executed successfully, without any output."
+            ):
                 stdout_parts.append(res["stdout"])
             if res.get("stderr"):
                 stderr_parts.append(res["stderr"])
-            
+
             # Propagate working directory changes to subsequent lines
             last_cwd = res.get("cwd", last_cwd)
             self.cwd = last_cwd
 
         # Aggregate the collected output of all lines
-        final_stdout = "\n".join(stdout_parts) if stdout_parts else "Command executed successfully, without any output."
+        final_stdout = (
+            "\n".join(stdout_parts)
+            if stdout_parts
+            else "Command executed successfully, without any output."
+        )
         final_stderr = "\n".join(stderr_parts) if stderr_parts else ""
 
         return {"stdout": final_stdout, "stderr": final_stderr, "cwd": last_cwd}

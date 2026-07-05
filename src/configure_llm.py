@@ -16,9 +16,9 @@ class Config:
     llm_base_url: str = "https://generativelanguage.googleapis.com/v1beta/openai"
 
     # model list: https://ai.google.dev/gemini-api/docs/models
-    #llm_model_name: str = "gemini-2.5-flash"
+    # llm_model_name: str = "gemini-2.5-flash"
     llm_model_name: str = "gemini-3.1-flash-lite"
-    #llm_model_name: str = "gemini-3-flash-preview"
+    # llm_model_name: str = "gemini-3-flash-preview"
 
     # Attempts to read from environment variable first, otherwise falls back to the string
     llm_api_key: str = os.environ.get("GEMINI_API_KEY", "YOUR_GOOGLE_GEMINI_API_KEY")
@@ -147,6 +147,7 @@ When telling the user commands to execute avoid line continuation as every line 
 Never attempt to execute a command not in this list. If asked to do so, politely refuse.
 """
 
+
 #     @property
 #     def system_prompt(self) -> str:
 #         """Generate the system prompt for the LLM based on allowed commands."""
@@ -155,7 +156,7 @@ Never attempt to execute a command not in this list. If asked to do so, politely
 # You are a helpful and very concise Bash assistant with the ability to execute commands in the shell.
 # You engage with users to help answer questions about bash commands, or execute their intent.
 # If user intent is unclear, keep engaging with them to figure out what they need and how to best help
-# them. 
+# them.
 
 # When a command is executed, you will be given the output from that command and any errors. Based on
 # that, either take further actions or yield control to the user.
