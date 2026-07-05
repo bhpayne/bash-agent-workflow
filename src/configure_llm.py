@@ -141,6 +141,9 @@ You are only allowed to execute the following commands:
 ```
 {self.allowed_commands}
 ```
+
+When telling the user commands to execute avoid line continuation as every line is executed separately in order.
+
 Never attempt to execute a command not in this list. If asked to do so, politely refuse.
 """
 
