@@ -56,7 +56,13 @@ def main(config: Config, proceed_without_waiting: bool):
                 new_system = config.generate_system_prompt(
                     wf.get_current_instructions()
                 )
-                messages.set_system_message(new_system)
+
+                # forget everything (all context) from previous stage by re-instantiating the Messages class. 
+                # This wipes the previous message history and starts fresh with only the new system message.
+                messages = Messages(new_system)
+
+                # OLD, DEPRECATED: a new stage incurs a new 'system' prompt and retains context.
+                #messages.set_system_message(new_system)
 
                 print(f"Reminder: {wf.get_current_instructions()}")
                 continue
@@ -73,7 +79,12 @@ def main(config: Config, proceed_without_waiting: bool):
                 new_system = config.generate_system_prompt(
                     wf.get_current_instructions()
                 )
-                messages.set_system_message(new_system)
+
+                # Re-initialize Messages instead of just set_system_message
+                messages = Messages(new_system)
+
+                # OLD, DEPRECATED: a new stage incurs a new 'system' prompt and retains context.
+                # messages.set_system_message(new_system)
                 continue
             else:
                 print("\n[⚠️] Already at Stage 1.\n")
