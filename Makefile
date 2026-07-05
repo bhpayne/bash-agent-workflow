@@ -36,7 +36,7 @@ container_live_as_user:
 container_live_as_root:
 	$(DOCKER_OR_PODMAN) run -it --rm \
                 $(ENV_FLAGS) \
-                $(IMAGE_NAME):$(CONTAINER_TAG) /bin/bash
+                $(IMAGE_NAME):$(CONTAINER_TAG) python3 /agent/main_loop.py --isolated --dir /opt --log
 
 container_live_host_folder_access:
 	$(DOCKER_OR_PODMAN) run -it --rm \
