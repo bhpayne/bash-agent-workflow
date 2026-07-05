@@ -33,13 +33,22 @@ def main(config: Config, proceed_without_waiting: bool):
     print("[INFO] Type '/signoff' to approve the current stage and advance.")
     print("[INFO] Type '/back' to revert to the previous stage.\n")
 
+    # automatically prompt the LLM upon stage transition
+    automatic_prompt = None
+
     # The main agent loop
     while True:
 
         stage_prefix = wf.get_stage_prefix()
 
-        # Get user message.
-        user = input(f"{stage_prefix} ['{bash.cwd}' 🙂] ").strip()
+
+        # Get user message or auto-prompt if we just transitioned
+        if automatic_prompt:
+            user = automatic_prompt
+            automatic_prompt = None
+            print(f"[{stage_prefix}] Auto-prompting LLM with stage instructions...\n")
+        else:  # Get user message.
+            user = input(f"{stage_prefix} ['{bash.cwd}' 🙂] ").strip()
 
         if user.lower() == "quit":
             print("\n[🤖] Shutting down. Bye!\n")
@@ -63,6 +72,9 @@ def main(config: Config, proceed_without_waiting: bool):
 
                 # OLD, DEPRECATED: a new stage incurs a new 'system' prompt and retains context.
                 #messages.set_system_message(new_system)
+
+                # Set the automatic prompt for the next loop execution
+                automatic_prompt = wf.get_current_instructions()
 
                 print(f"Reminder: {wf.get_current_instructions()}")
                 continue
