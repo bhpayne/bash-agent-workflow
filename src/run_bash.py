@@ -31,24 +31,53 @@ class Bash:
                     extracted.append(cleaned.split()[0])
         return extracted
 
+
     def exec_bash_command(self, cmd: str) -> Dict[str, str]:
         """
-        Execute the bash command after getting confirmation from the user
+        Execute the bash command after getting confirmation from the user.
+        If the command contains line breaks, it is split and executed line-by-line.
         """
-        if cmd:
-            # Check the allowlist
-            allowed = True
+        if not cmd:
+            return {"error": "No command was provided"}
 
-            for cmd_part in self._extract_commands(cmd):
+        # Identify line breaks, split into separate lines, and filter out empty lines
+        lines = [line.strip() for line in cmd.splitlines() if line.strip()]
+        if not lines:
+            return {"error": "No command was provided"}
+
+        stdout_parts = []
+        stderr_parts = []
+        last_cwd = self.cwd
+
+        for line in lines:
+            # Check the allowlist for each individual line
+            allowed = True
+            for cmd_part in self._extract_commands(line):
                 if cmd_part not in self._allowed_commands:
                     allowed = False
                     break
 
             if not allowed:
-                return {"error": "Parts of this command were not in the allowlist."}
+                return {"error": f"Parts of this command were not in the allowlist: '{line}'"}
 
-            return self._run_bash_command(cmd)
-        return {"error": "No command was provided"}
+            # Run the single line command
+            res = self._run_bash_command(line)
+            
+            # Accumulate stdout and stderr
+            if res.get("stdout") and res["stdout"] != "Command executed successfully, without any output.":
+                stdout_parts.append(res["stdout"])
+            if res.get("stderr"):
+                stderr_parts.append(res["stderr"])
+            
+            # Propagate working directory changes to subsequent lines
+            last_cwd = res.get("cwd", last_cwd)
+            self.cwd = last_cwd
+
+        # Aggregate the collected output of all lines
+        final_stdout = "\n".join(stdout_parts) if stdout_parts else "Command executed successfully, without any output."
+        final_stderr = "\n".join(stderr_parts) if stderr_parts else ""
+
+        return {"stdout": final_stdout, "stderr": final_stderr, "cwd": last_cwd}
 
     def to_json_schema(self) -> Dict[str, Any]:
         """
