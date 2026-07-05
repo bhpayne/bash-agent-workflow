@@ -1,4 +1,6 @@
-# workflow.py
+#!/usr/bin/env python3
+
+# see https://en.wikipedia.org/wiki/V-model
 
 import json
 import os
@@ -6,32 +8,32 @@ import os
 STAGES = {
     1: {
         "name": "Goal Specification",
-        "instructions": "Prompt the user to define the overall goal if it is not yet clear. Do not proceed until the goal is established. The goal doesn't have to be something you can accomplish immediately as the next step will be to decompose the task. Once the goal has been set, write the file `GOAL.md`",
+        "instructions": "Prompt me to define the overall goal. Do not proceed to the next stage until the goal is established. The goal doesn't have to be something you can accomplish immediately as the next step will be to decompose the task. Goals that are ambitious or imprecise are acceptable. Once the goal has been set, write the file `GOAL.md`",
         "file_dependencies": ["GOAL.md"],
     },
     2: {
         "name": "Requirements Formulation",
-        "instructions": "Work with the user to iteratively draft specific, verifiable requirements. Write these to `REQUIREMENTS.md`.",
-        "file_dependencies": ["REQUIREMENTS.md"],
+        "instructions": "Read the file `GOAL.md` and brainstorm with me to iteratively draft specific, verifiable requirements. These requirements refine and support the content stated in `GOAL.md`. Propose one requirement at a time to be added. Once the user concurs with a requirement, Write the requirement to the file `REQUIREMENTS.md`. This stage is complete once the user signs off on the requirements being comprehensive.",
+        "file_dependencies": ["REQUIREMENTS.md", "GOAL.md"],
     },
     3: {
         "name": "Completion Definitions",
-        "instructions": "Append explicit 'Definition of Done' / success criteria to respective entries in `REQUIREMENTS.md`. Identify edge cases and propose quantitative boundary conditions.",
+        "instructions": "Read the file `REQUIREMENTS.md` and brainstorm with the user to come up with 'Definition of Done' or success criteria to each entries in `REQUIREMENTS.md`. Identify edge cases and propose quantitative boundary conditions. Once the user concurs with a proposed Definition of Done, append the explicit success criteria to each requirement.",
         "file_dependencies": ["REQUIREMENTS.md"],
     },
     4: {
         "name": "Use Cases",
-        "instructions": "Propose use cases describing the intended workflow. Write these to `USE_CASES.md`.",
+        "instructions": "Read the `GOAL.md` file and the `REQUIREMENTS.md` file. Propose a use case describing the intended workflow. Once I concur, append the use case to the file `USE_CASES.md`. Propose additional use cases until I sign off on this stage.",
         "file_dependencies": ["USE_CASES.md"],
     },
     5: {
         "name": "High-Level Planning & Task Sequence",
-        "instructions": "Based on REQUIREMENTS.md, design an implementation task sequence and write it to PLAN.md.",
+        "instructions": "Based on reading the files `REQUIREMENTS.md` and `GOAL.md` and `USE_CASES.md`, brainstorm with me the design of a task sequence. Once I concur write the plan to a file called `PLAN.md`.",
         "file_dependencies": ["PLAN.md"],
     },
     6: {
         "name": "Design Evaluation & Recommendations",
-        "instructions": "Identify design options, document them in `DESIGN.md`, recommend one with trade-offs, and note the selections once accepted.",
+        "instructions": "Read the files `REQUIREMENTS.md` and `GOAL.md` and `USE_CASES.md` and `PLAN.md`. Identify design options for implementation and propose the options to me. Examples include which programming language to use, which operating system to support, whether software should be command-line or have a GUI, etc. If I concur that the design option is relevant then document the design choice in `DESIGN.md`. Then recommend one of the options, explain the trade-offs. If I accept the selection then note which was accepted in `DESIGN.md`.",
         "file_dependencies": ["DESIGN.md"],
     },
     7: {
